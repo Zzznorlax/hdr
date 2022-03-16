@@ -6,19 +6,28 @@ import matplotlib.pyplot as plt
 from typing import List
 from PIL import Image
 
-
+from utils import log as log_utils
 from utils import file as file_utils
 from utils import exif as exif_utils
 
 
-class HDR():
+class DebevecMethod():
 
     def __init__(self, img_folder: str, n: int = 50, lc: float = 5):
-        self.EXPOSURE_TIME_KEY = 'ExposureTime'
-        self.EXTS = ['.jpg', '.png', '.jpeg']
+
+        stdout_handler = log_utils.get_stream_handler()
+        self.logger = log_utils.get_logger("debevec-logger", handlers=[stdout_handler])
+
+        self.logger.info("Initializing Debevec Method")
+        self.logger.info("sample points: {}".format(n))
+        self.logger.info("lambda: {}".format(lc))
+
+        self.EXTS = ['.jpg', '.png', '.jpeg', '.JPG']
         self.MAX_VAL = 255
         self.MIN_VAL = 0
         self.z_range_length = self.MAX_VAL - self.MIN_VAL + 1
+
+        self.weighting_ufunc = np.vectorize(self.weighting)
 
         # image count
         self.P = 0
@@ -34,60 +43,85 @@ class HDR():
 
         self.ch_num = 3
 
-        # list of g functions in r, g, b order
+        self.img_paths = []
+
+        # ndarray of g functions in r, g, b order
         self.G = np.zeros((self.ch_num, self.z_range_length))
 
-        # Images as numpy array
+        # radiance map
+        self.radiance_map = np.zeros((self.ch_num, self.H, self.W), dtype=np.float32)
+
+        # images as numpy array
         self.imgs: List[np.ndarray] = []
 
-        # List of log(Exposure time)
+        # list of ln(Exposure time)
         self.exposure_time: List[float] = []
+
         self.load_folder(img_folder)
 
-        # rearrange image layers channel-wisely
-        # shape: [channels, images num, height, width]
-        self.layers = np.zeros((self.ch_num, self.P, self.H, self.W), dtype=np.uint8)
-        for i in range(self.ch_num):
-            self.layers[i] = np.array([img[:, :, i] for img in self.imgs])
-            # np.savetxt('sample_a.txt', self.layers[i][0])
-        self.samples = np.zeros((self.ch_num, self.N, self.P), dtype=np.uint8)
-        self.sample()
+        self.P = len(self.img_paths)
 
-    # TODO Add size check
-    def load_folder(self, path: str):
-        file_paths = file_utils.get_files(path)
+        for file_path in self.img_paths:
 
-        for file_path in file_paths:
-            name, ext = file_utils.get_extension(file_path)
-            name = file_utils.get_filename(name)
-            if ext not in self.EXTS:
-                continue
+            img = self.load_image(file_path)
 
-            img = Image.open(file_path).convert('RGB')
+            d_t = self.parse_exposure_time(img, file_utils.get_filename(file_path))
 
-            try:
-                d_t = self.read_exposure_time(img)
-                print("{}: exposure time = {}".format(file_path, d_t))
+            self.logger.info("{}: exposure time = {}".format(file_path, d_t))
 
-            except KeyError:
-                d_t = 1 / int(name)
+            self.exposure_time.append(math.log(d_t))
 
-            self.exposure_time.append(math.log10(d_t))
             np_img = np.array(img)
+
+            # TODO Add size check
             self.H = np_img.shape[0]
             self.W = np_img.shape[1]
 
             self.imgs.append(np_img)
 
-        self.P = len(self.imgs)
+        self.logger.info("image size: {} x {}".format(self.W, self.H))
+        self.logger.info("picture number: {}".format(self.P))
+
+        # single channel image layers
+        # shape: [channels, images num, height, width]
+        self.layers = np.zeros((self.ch_num, self.P, self.H, self.W), dtype=np.uint8)
+        for i in range(self.ch_num):
+            self.layers[i] = np.array([img[:, :, i] for img in self.imgs])
+
+        self.samples = np.zeros((self.ch_num, self.N, self.P), dtype=np.uint8)
+        self.sample()
+
+    def load_folder(self, path: str):
+        file_paths = file_utils.get_files(path)
+
+        file_paths.sort()
+
+        for file_path in file_paths:
+            _, ext = file_utils.get_extension(file_path)
+
+            if ext not in self.EXTS:
+                continue
+
+            self.img_paths.append(file_path)
 
     @staticmethod
     def load_image(path: str) -> Image.Image:
         return Image.open(path).convert('RGB')
 
-    def read_exposure_time(self, img: Image.Image) -> float:
-        exif = exif_utils.parse_exif(img)
-        return float(exif[self.EXPOSURE_TIME_KEY])
+    @staticmethod
+    def parse_exposure_time(img: Image.Image, filename: str) -> float:
+
+        d_t: float = 0
+
+        try:
+            exif = exif_utils.parse_exif(img)
+            d_t = float(exif['ExposureTime'])
+
+        except KeyError:
+            filename = filename.replace('_', '/')
+            d_t = eval(filename)
+
+        return d_t
 
     def sample(self):
 
@@ -109,17 +143,11 @@ class HDR():
                 self.samples[ch_idx][sample_idx] = self.layers[ch_idx, :, ys[sample_pos_idx], xs[sample_pos_idx]]
                 sample_idx += 1
 
+        self.logger.info("sample number: {} x {} x {} = {}".format(self.ch_num, self.P, self.N, self.ch_num * self.P * self.N))
+
     # W func
-    def weighting(self, val: float) -> float:
+    def weighting(self, val):
         """hat weighting function
-
-        Args:
-            val (float): _description_
-            upper (float): _description_
-            lower (float): _description_
-
-        Returns:
-            float: _description_
         """
 
         if val >= (self.MAX_VAL + self.MIN_VAL) / 2:
@@ -128,12 +156,13 @@ class HDR():
         return val - self.MIN_VAL
 
     def solve_g(self):
-
+        self.logger.info("start solving g")
         z_range_length = self.MAX_VAL - self.MIN_VAL + 1
         row_num = self.N * self.P + 1 + z_range_length - 2
         col_num = z_range_length + self.N
 
         for ch in range(self.ch_num):
+            self.logger.info("solving g for channel {}".format(ch))
 
             mat_a = np.zeros((row_num, col_num))
             mat_b = np.zeros((row_num))
@@ -164,11 +193,53 @@ class HDR():
                 row_idx += 1
 
             # solves Ax = b
-            x = np.linalg.lstsq(mat_a, mat_b)
+            x = np.linalg.lstsq(mat_a, mat_b, rcond=None)
 
             self.G[ch] = x[0][self.MIN_VAL:self.MAX_VAL + 1]
 
-    def plot_g(self):
+        self.logger.info("g solved")
+
+    def compute_radiance_map(self):
+        self.logger.info("start constructing radiance map")
+
+        # with float32 opencv can then save radiance map as .hdr file
+        tmp = self.layers.astype(np.float32)
+
+        # w(zij) * (g(zij) - ln(tj))
+        for pic_idx in range(self.P):
+            tmp[:, pic_idx, :, :] -= self.exposure_time[pic_idx]
+
+        for ch in range(self.ch_num):
+            tmp[ch] += self.G[ch][self.layers[ch]]
+
+        tmp *= self.weighting_ufunc(self.layers)
+
+        # weighted average
+        tmp = np.sum(tmp, axis=1) / np.sum(self.weighting_ufunc(self.layers), axis=1)
+
+        # restores radiance from ln(radiance)
+        self.radiance_map = np.exp(tmp)
+
+        self.logger.info("radiance map constructed")
+
+    def plot_ln_radiance_map(self, dest: str):
+        label_list = ['R', 'G', 'B', 'Image']
+        for idx in range(self.ch_num):
+            plt.subplot(2, 2, idx + 1)
+            plt.title(label_list[idx])
+            plt.imshow(np.log(self.radiance_map[idx]), interpolation='none')
+            plt.xticks([])
+            plt.yticks([])
+
+        plt.subplot(2, 2, 4)
+        plt.title(label_list[3])
+        plt.imshow(self.imgs[self.P // 2])
+        plt.xticks([])
+        plt.yticks([])
+
+        plt.savefig(dest, dpi=512)
+
+    def plot_g(self, dest: str):
         label_list = ['R', 'G', 'B']
         marker_list = ['r--', 'g', 'b']
         for idx, data in enumerate(self.G):
@@ -184,4 +255,4 @@ class HDR():
             plt.xticks([])
             plt.yticks([])
 
-        plt.show()
+        plt.savefig(dest)
