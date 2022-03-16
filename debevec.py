@@ -61,6 +61,12 @@ class DebevecMethod():
 
         self.P = len(self.img_paths)
 
+        # def _k(x):
+        #     x, _ = file_utils.get_extension(file_utils.get_filename(x))
+        #     return eval(x)
+
+        # self.img_paths.sort(key=_k)
+
         for file_path in self.img_paths:
 
             img = self.load_image(file_path)
@@ -92,9 +98,8 @@ class DebevecMethod():
         self.sample()
 
     def load_folder(self, path: str):
-        file_paths = file_utils.get_files(path)
 
-        file_paths.sort()
+        file_paths = file_utils.get_files(path)
 
         for file_path in file_paths:
             _, ext = file_utils.get_extension(file_path)
@@ -118,6 +123,7 @@ class DebevecMethod():
             d_t = float(exif['ExposureTime'])
 
         except KeyError:
+            filename, _ = file_utils.get_extension(filename)
             filename = filename.replace('_', '/')
             d_t = eval(filename)
 
@@ -203,19 +209,22 @@ class DebevecMethod():
         self.logger.info("start constructing radiance map")
 
         # with float32 opencv can then save radiance map as .hdr file
-        tmp = self.layers.astype(np.float32)
+        tmp = np.zeros((self.ch_num, self.P, self.H, self.W), dtype=np.float32)
 
         # w(zij) * (g(zij) - ln(tj))
-        for pic_idx in range(self.P):
-            tmp[:, pic_idx, :, :] -= self.exposure_time[pic_idx]
-
         for ch in range(self.ch_num):
             tmp[ch] += self.G[ch][self.layers[ch]]
 
-        tmp *= self.weighting_ufunc(self.layers)
+        for pic_idx in range(self.P):
+            tmp[:, pic_idx, :, :] -= self.exposure_time[pic_idx]
+
+        weighted_z = self.weighting_ufunc(self.layers)
+
+        tmp *= weighted_z
 
         # weighted average
-        tmp = np.sum(tmp, axis=1) / np.sum(self.weighting_ufunc(self.layers), axis=1)
+        # adds 1e-8 before division to prevent divided by zeros
+        tmp = np.sum(tmp, axis=1, dtype=np.float32) / np.sum(weighted_z, axis=1, dtype=np.float32) + 1e-8
 
         # restores radiance from ln(radiance)
         self.radiance_map = np.exp(tmp)

@@ -12,4 +12,6 @@ if __name__ == '__main__':
     hdr.compute_radiance_map()
     hdr.plot_ln_radiance_map(output_dir + '/radiance_map.png')
 
+    hdr.compute_radiance(output_dir + '/r.hdr')
+
     hdr_utils.write_radiance_map(hdr.radiance_map, dest=output_dir + '/test.hdr')
