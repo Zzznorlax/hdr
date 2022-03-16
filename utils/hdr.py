@@ -2,6 +2,26 @@ import cv2
 import numpy as np
 
 
+def read_hdr(src: str) -> np.ndarray:
+    """reads a .hdr file
+
+    Args:
+        src (str): file path
+
+    Returns:
+        np.ndarray: np.array((channel, height, width)) radiance map
+    """
+
+    img = cv2.imread(src, flags=cv2.IMREAD_ANYDEPTH)
+
+    # BGR to RGB
+    img = img[:, :, ::-1]
+
+    img = np.moveaxis(img, -1, 0)
+
+    return img
+
+
 def write_hdr(image: np.ndarray, dest: str):
     """writes radiance map to .hdr file
 
