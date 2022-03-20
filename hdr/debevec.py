@@ -9,6 +9,7 @@ from PIL import Image
 from utils import log as log_utils
 from utils import file as file_utils
 from utils import exif as exif_utils
+from utils import image as img_utils
 
 
 class DebevecMethod():
@@ -61,12 +62,6 @@ class DebevecMethod():
 
         self.P = len(self.img_paths)
 
-        # def _k(x):
-        #     x, _ = file_utils.get_extension(file_utils.get_filename(x))
-        #     return eval(x)
-
-        # self.img_paths.sort(key=_k)
-
         for file_path in self.img_paths:
 
             img = self.load_image(file_path)
@@ -92,7 +87,7 @@ class DebevecMethod():
         # shape: [channels, images num, height, width]
         self.layers = np.zeros((self.ch_num, self.P, self.H, self.W), dtype=np.uint8)
         for i in range(self.ch_num):
-            self.layers[i] = np.array([img[:, :, i] for img in self.imgs])
+            self.layers[i] = np.array([img[:, :, i] for img in img_utils.mtb_alignment(np.array(self.imgs), scale=5)])
 
         self.samples = np.zeros((self.ch_num, self.N, self.P), dtype=np.uint8)
         self.sample()
@@ -224,7 +219,7 @@ class DebevecMethod():
 
         # weighted average
         # adds 1e-8 before division to prevent divided by zeros
-        tmp = np.sum(tmp, axis=1, dtype=np.float32) / np.sum(weighted_z, axis=1, dtype=np.float32) + 1e-8
+        tmp = np.sum(tmp, axis=1, dtype=np.float32) / (np.sum(weighted_z, axis=1, dtype=np.float32) + 1e-8)
 
         # restores radiance from ln(radiance)
         self.radiance_map = np.exp(tmp)
