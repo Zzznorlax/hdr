@@ -51,5 +51,5 @@ from utils import file as file_utils
 
 
 ### Median Threshold Binary (MTB) Image Alignment
-![Before alignment]([url-to-image](https://github.com/Zzznorlax/hdr/blob/main/resource/pre_alignment.png))
-![Result]([url-to-image](https://github.com/Zzznorlax/hdr/blob/main/resource/aligned.png))
+![Before alignment](https://github.com/Zzznorlax/hdr/blob/main/resource/pre_alignment.png)
+![Result](https://github.com/Zzznorlax/hdr/blob/main/resource/aligned.png)
