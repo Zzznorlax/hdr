@@ -83,11 +83,16 @@ class DebevecMethod():
         self.logger.info("image size: {} x {}".format(self.W, self.H))
         self.logger.info("picture number: {}".format(self.P))
 
+        # aligns images
+        scale = 5
+        self.logger.info("start MTB image alignment for {} images with scale set to {}".format(len(self.imgs), scale))
+        self.imgs = img_utils.mtb_alignment(np.array(self.imgs), scale=scale).tolist()
+
         # single channel image layers
         # shape: [channels, images num, height, width]
         self.layers = np.zeros((self.ch_num, self.P, self.H, self.W), dtype=np.uint8)
         for i in range(self.ch_num):
-            self.layers[i] = np.array([img[:, :, i] for img in img_utils.mtb_alignment(np.array(self.imgs), scale=5)])
+            self.layers[i] = np.array([img[:, :, i] for img in self.imgs])
 
         self.samples = np.zeros((self.ch_num, self.N, self.P), dtype=np.uint8)
         self.sample()

@@ -14,42 +14,40 @@ If `ExposureTime` key is not presented in the image's `exif`, image filename wil
 Filename for a `1 / 64` exposure time image should be `1_64.jpg`, with `/` replaced with `_`.
 Example for a set of input images could be as following.
 ```
-dir
+project_dir
 └── samples
-    ├── 2.jpg
-    ├── 1.jpg
-    ├── 1_2.jpg
-    ├── 1_4.jpg
-    ├── 1_16.jpg
-    └── 1_64.jpg
+    └── data
+        ├── 2.jpg
+        ├── 1.jpg
+        ├── 1_2.jpg
+        ├── 1_4.jpg
+        ├── 1_16.jpg
+        └── 1_64.jpg
 ```
 
-### Usage Example
-```python3
-from hdr.debevec import DebevecMethod
-from tone_mapping.global_tm import GlobalToneMapping
-
-from utils import hdr as hdr_utils
-from utils import file as file_utils
-
-    folder = 'samples'
-
-    output_dir = file_utils.create_folder(folder, "outputs")
-
-    hdr = DebevecMethod(img_folder=folder, n=50, lc=100)
-    hdr.solve_g()
-    hdr.plot_g(output_dir + '/g_plots.png')
-    hdr.compute_radiance_map()
-    hdr.plot_ln_radiance_map(output_dir + '/radiance_map.png')
-
-    hdr_utils.write_hdr(hdr.radiance_map, dest=output_dir + '/raw.hdr')
-
-    raw_img = hdr_utils.read_hdr(output_dir + '/raw.hdr')
-    img = GlobalToneMapping.photographic(raw_img, key=0.36)
-    hdr_utils.write_hdr(img, output_dir + '/tm_photographic_36.hdr')
+### Assembling HDR Image
+Execute `main.py`.
+```shell
+python3 main.py
+```
+This will assemble a HDR image named `raw.hdr`, a plot of g functions in RGB channels `g_plots.png` and
+a radiance map `radiance_map.png` in the `outputs` directory.
+```
+project_dir
+└── samples
+    └── data
+        ├── 1_2.jpg
+        ├── 1_4.jpg
+        └── outputs
+            ├── raw.hdr
+            ├── radiance_map.png
+            └── g_plots.png
 ```
 
+### Median Threshold Bitmap (MTB) Image Alignment
+Image alignment using median threshold bitmap (MTB) method.
+* Before alignment
+  ![Before alignment](https://github.com/Zzznorlax/hdr/blob/main/resource/pre_alignment.png)
 
-### Median Threshold Binary (MTB) Image Alignment
-![Before alignment](https://github.com/Zzznorlax/hdr/blob/main/resource/pre_alignment.png)
-![Result](https://github.com/Zzznorlax/hdr/blob/main/resource/aligned.png)
+* After alignment
+  ![Result](https://github.com/Zzznorlax/hdr/blob/main/resource/aligned.png)

@@ -109,9 +109,17 @@ def to_binary_bool(img: np.ndarray, thres: float) -> np.ndarray:
     return np.where(img > thres, True, False)
 
 
-# XXX under construction
-def mtb_alignment(imgs: np.ndarray, denoise_rate: int = 1, scale: int = 9) -> np.ndarray:
+def mtb_alignment(imgs: np.ndarray, denoise_rate: int = 1, scale: int = 4) -> np.ndarray:
+    """median threshold bitmap images alignment
 
+    Args:
+        imgs (np.ndarray): an array of input images
+        denoise_rate (int, optional): the range of value to be included in exclusion map. Defaults to 1.
+        scale (int, optional): times of downscaling. Defaults to 4.
+
+    Returns:
+        np.ndarray: array of shifted images
+    """
     exclusion_maps = []
 
     mtb_imgs: List[np.ndarray] = []
