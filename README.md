@@ -30,3 +30,6 @@ from utils import file as file_utils
     img = GlobalToneMapping.photographic(raw_img, key=0.36)
     hdr_utils.write_hdr(img, output_dir + '/tm_photographic_36.hdr')
 ```
+
+
+### Median Threshold Binary (MTB) Image Alignment

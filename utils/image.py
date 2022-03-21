@@ -110,7 +110,7 @@ def to_binary_bool(img: np.ndarray, thres: float) -> np.ndarray:
 
 
 # XXX under construction
-def mtb_alignment(imgs: np.ndarray, denoise_rate: int = 5, scale: int = 9) -> np.ndarray:
+def mtb_alignment(imgs: np.ndarray, denoise_rate: int = 1, scale: int = 9) -> np.ndarray:
 
     exclusion_maps = []
 
@@ -122,14 +122,11 @@ def mtb_alignment(imgs: np.ndarray, denoise_rate: int = 5, scale: int = 9) -> np
 
         mtb = to_binary(gray, float(median), 1, 0)
 
-        mtb_imgs.append(cv2.resize(mtb.astype(np.float32), dsize=(mtb.shape[0] // (scale * 2), mtb.shape[1] // (scale * 2))))
-        cv2.imshow("mtb", mtb.astype(np.float32))
-        cv2.waitKey(0)
+        mtb_imgs.append(cv2.resize(mtb.astype(np.float32), dsize=(mtb.shape[0] // (2 ** scale), mtb.shape[1] // (2 ** scale))))
+
         # creates exclusion map
         exclusion_map = np.where(np.logical_and(np.less_equal(gray, median + denoise_rate), np.greater_equal(gray, median - denoise_rate)), 0, 1)
-        cv2.imshow("exmap", exclusion_map.astype(np.float32))
-        cv2.waitKey(0)
-        exclusion_maps.append(cv2.resize(exclusion_map.astype(np.float32), dsize=(exclusion_map.shape[0] // (scale * 2), mtb.shape[1] // (scale * 2))))
+        exclusion_maps.append(cv2.resize(exclusion_map.astype(np.float32), dsize=(exclusion_map.shape[0] // (2 ** scale), mtb.shape[1] // (2 ** scale))))
 
     # initializes offsets with [y = 0, x = 0]
     offsets = []
@@ -154,13 +151,12 @@ def mtb_alignment(imgs: np.ndarray, denoise_rate: int = 5, scale: int = 9) -> np
                     shifted = shift_y(shift_x(mtb, offset_x), offset_y)
 
                     offset_diff = np.count_nonzero(np.logical_and(np.logical_xor(shifted, template), exclusion_maps[idx]))
-                    print(offset_diff, diff)
-                    if diff < offset_diff:
+                    if diff > offset_diff:
                         diff = offset_diff
                         min_offset = [offset_y, offset_x]
 
             # shifts and scales image
-            mtb = shift_y(shift_x(mtb, min_offset[0]), min_offset[1])
+            mtb = shift_y(shift_x(mtb, min_offset[1]), min_offset[0])
             mtb_imgs[idx] = cv2.resize(mtb, dsize=(mtb.shape[0] * 2, mtb.shape[1] * 2), interpolation=cv2.INTER_LINEAR)
             exclusion_maps[idx] = cv2.resize(exclusion_maps[idx], dsize=(exclusion_maps[idx].shape[0] * 2, exclusion_maps[idx].shape[1] * 2), interpolation=cv2.INTER_LINEAR)
 
@@ -170,7 +166,6 @@ def mtb_alignment(imgs: np.ndarray, denoise_rate: int = 5, scale: int = 9) -> np
         mtb_imgs[template_idx] = cv2.resize(template, dsize=(template.shape[0] * 2, template.shape[1] * 2), interpolation=cv2.INTER_LINEAR)
         exclusion_maps[template_idx] = cv2.resize(exclusion_maps[template_idx], dsize=(exclusion_maps[template_idx].shape[0], exclusion_maps[template_idx].shape[1]), interpolation=cv2.INTER_LINEAR)
 
-    print(offsets)
     for idx, img in enumerate(imgs):
         imgs[idx] = shift_y(shift_x(img, offsets[idx][1]), offsets[idx][0])
 
