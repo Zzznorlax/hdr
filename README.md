@@ -1,5 +1,28 @@
 # High Dynamic Range Imaging
 
+繳交格式：
+
+### TODO
+- [ ] 繳交檔案 hw1_[teamID].zip e.g. hw1_[30].zip
+- [ ] data/
+    - [ ] a. 原始照片（original pictures for a scene under different exposures）
+    - [ ] b. recovered HDR image
+    - [ ] c. tone-mapped image
+- [ ] code/
+  - [ ] Main args parsing
+    請提供你們小組的所有程式碼(若有可執行檔案請一併附上)
+- [ ] README
+    請描述程式執行方式/dependency等，並確保程式能夠執行
+- [ ] report.pdf/html
+    請繳交pdf或html格式，描述：
+    - [ ] 作業內容
+    - [ ] 實作演算法
+    - [ ] 實作細節
+    - [ ] 實作結果
+    請特別注意：若有實作加分項目(詳細項目請參考作業詳細內容)，請務必在report描述並註明
+- [ ] result.png
+    最終結果圖，該圖為你們小組最終的實作結果且會用於投票中，投票結果前五名的組別會有額外加分
+
 
 ### Environment
 
