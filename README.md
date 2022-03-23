@@ -6,10 +6,10 @@
     - [ ] a. 原始照片（original pictures for a scene under different exposures）
     - [ ] b. recovered HDR image
     - [ ] c. tone-mapped image
-- [ ] code/
-  - [ ] Main args parsing
+- [x] code/
+  - [x] Main args parsing
     請提供你們小組的所有程式碼(若有可執行檔案請一併附上)
-- [ ] README
+- [x] README
     請描述程式執行方式/dependency等，並確保程式能夠執行
 - [ ] report.pdf/html
     請繳交pdf或html格式，描述：
@@ -81,7 +81,7 @@ project_dir
 ### Median Threshold Bitmap (MTB) Image Alignment
 Image alignment using median threshold bitmap (MTB) method.
 * Before alignment
-  ![Before alignment](https://github.com/Zzznorlax/hdr/blob/main/resource/pre_alignment.png)
+  <img src="assets/pre_alignment.png" alt="before alignment"/>
 
 * After alignment
-  ![Result](https://github.com/Zzznorlax/hdr/blob/main/resource/aligned.png)
+  <img src="assets/aligned.png" alt="aligned"/>

@@ -6,7 +6,7 @@
 ### 作業內容
 
 #### Main
-- [ ] **1. Photographs**
+- [x] **1. Photographs**
 - [x] **2. HDR Image assembling**
   - [x] Debevec's Method
 
