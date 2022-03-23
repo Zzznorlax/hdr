@@ -1,27 +1,5 @@
 # High Dynamic Range Imaging
 
-### TODO
-- [ ] 繳交檔案 hw1_[teamID].zip e.g. hw1_[30].zip
-- [ ] data/
-    - [ ] a. 原始照片（original pictures for a scene under different exposures）
-    - [ ] b. recovered HDR image
-    - [ ] c. tone-mapped image
-- [x] code/
-  - [x] Main args parsing
-    請提供你們小組的所有程式碼(若有可執行檔案請一併附上)
-- [x] README
-    請描述程式執行方式/dependency等，並確保程式能夠執行
-- [ ] report.pdf/html
-    請繳交pdf或html格式，描述：
-    - [ ] 作業內容
-    - [ ] 實作演算法
-    - [ ] 實作細節
-    - [ ] 實作結果
-    請特別注意：若有實作加分項目(詳細項目請參考作業詳細內容)，請務必在report描述並註明
-- [ ] result.png
-    最終結果圖，該圖為你們小組最終的實作結果且會用於投票中，投票結果前五名的組別會有額外加分
-
-
 ### Environment
 
 * Install dependencies
@@ -78,10 +56,35 @@ project_dir
 ```
 
 
-### Median Threshold Bitmap (MTB) Image Alignment
-Image alignment using median threshold bitmap (MTB) method.
-* Before alignment
-  <img src="assets/pre_alignment.png" alt="before alignment"/>
 
-* After alignment
-  <img src="assets/aligned.png" alt="aligned"/>
+### HDR
+* **LDR**
+  <img src="assets/hdr/ldr.png" alt="LDR image"/>
+
+* **g function**
+  <img src="assets/hdr/g_plots.png" alt="g function plots"/>
+
+* **Radiance map**
+  <img src="assets/hdr/radiance_map.png" alt="radiance map"/>
+
+* **HDR**
+  Tone mapped using Mantiuk `cv2.createTonemapMantiuk(1.3, 0.9, 1.3)`
+  <img src="assets/hdr/tm_mantiuk_ldr_1.png" alt="HDR image"/>
+
+### MTB Image Alignment
+* **Before**
+  <img src="assets/mtb/pre_alignment.png" alt="before alignment"/>
+
+* **After**
+  <img src="assets/mtb/aligned.png" alt="aligned"/>
+
+
+### Tone Mapping
+* **Raw**
+  <img src="assets/tm/raw.jpeg" alt="raw"/>
+
+* **Global Photographic key =0.18 & key = 0.09**
+  <img src="assets/tm/tm_photographic_18.jpeg" alt="key = 0.18"/> <img src="assets/tm/tm_photographic_09.jpeg" alt="key = 0.09"/>
+
+* **Gamma Correction**
+  <img src="assets/tm/tm_gamma_16.jpeg" alt="gamma = 1.6"/> <img src="assets/tm/tm_gamma_22.jpeg" alt="gamma = 2.2"/>

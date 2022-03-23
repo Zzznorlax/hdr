@@ -75,3 +75,11 @@ def write_rgbe(image: np.ndarray, dest: str):
 
 def norm_rgb(r, g, b):  # normalize by each color for human vision sensitivity
     return r * 0.216 + g * 0.7152 + b * 0.0722
+
+
+def to_ldr(src: str, dest: str):
+    hdr_img = cv2.imread(src, cv2.IMREAD_ANYDEPTH)
+
+    ldr_img = np.clip(hdr_img * 255, 0, 255).astype('uint8')
+
+    cv2.imwrite(dest, ldr_img)

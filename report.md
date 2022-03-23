@@ -11,12 +11,11 @@
   - [x] Debevec's Method
 
 #### Bonus
-- [ ] **3. Tone Mapping (Bonus)**
+- [x] **3. Tone Mapping (Bonus)**
   - [x] Global Tone Mapping
     - [x] Gamma Correction
     - [x] Photographic
-  - [ ] Local Tone Mapping
-- [x] MTB Image Alignment
+- [x] **4. MTB Image Alignment**
 
 
 ### 實作細節 & 演算法
@@ -30,14 +29,39 @@
 
 * 在計算 `g` 時，解 Least square 使用的工具是 `numpy` 的 `lstsq`
 
-* MTB image alignment 會將所有輸入的圖片都和 index 位於最中間的圖片對齊，但在輸入的圖片太多時可能會花費很多時間，在測試時同時對齊 10 張照片，並縮放 9 次會導致計算時間太長。這次拍攝時的晃動大致可以縮放 5 次完成對齊，也就是 2^5 - 1 pixels 的位移量。
+* MTB image alignment 會將所有輸入的圖片都和 index 位於最中間的圖片對齊，但在輸入的圖片太多時可能會花費很多時間，在測試時同時對齊 10 張照片，並縮放 6 次計算時間還在可接受範圍。這次拍攝時的晃動大致可以縮放 5 次完成對齊，也就是 2^5 - 1 pixels 的位移量。
 
 
 ### 實作結果
 
+#### HDR
+* **LDR**
+  <img src="assets/hdr/ldr.png" alt="LDR image"/>
+
+* **g function**
+  <img src="assets/hdr/g_plots.png" alt="g function plots"/>
+
+* **Radiance map**
+  <img src="assets/hdr/radiance_map.png" alt="radiance map"/>
+
+* **HDR**
+  Tone mapped using Mantiuk `cv2.createTonemapMantiuk(1.3, 0.9, 1.3)`
+  <img src="assets/hdr/tm_mantiuk_ldr_1.png" alt="HDR image"/>
+
 #### MTB Image Alignment
 * **Before**
-  <img src="assets/pre_alignment.png" alt="before alignment"/>
+  <img src="assets/mtb/pre_alignment.png" alt="before alignment"/>
 
 * **After**
-  <img src="assets/aligned.png" alt="aligned"/>
+  <img src="assets/mtb/aligned.png" alt="aligned"/>
+
+
+#### Tone Mapping
+* **Raw**
+  <img src="assets/tm/raw.jpeg" alt="raw"/>
+
+* **Global Photographic key =0.18 & key = 0.09**
+  <img src="assets/tm/tm_photographic_18.jpeg" alt="key = 0.18"/> <img src="assets/tm/tm_photographic_09.jpeg" alt="key = 0.09"/>
+
+* **Gamma Correction**
+  <img src="assets/tm/tm_gamma_16.jpeg" alt="gamma = 1.6"/> <img src="assets/tm/tm_gamma_22.jpeg" alt="gamma = 2.2"/>

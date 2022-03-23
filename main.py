@@ -50,12 +50,16 @@ def main(opt: argparse.Namespace):
     if isinstance(opt.global_photographic, float):
         key = opt.global_photographic
         img = GlobalToneMapping.photographic(hdr.radiance_map, key=key)
-        hdr_utils.write_hdr(img, join(output_dir + "tm_photographic_{}.hdr".format(key)))
+
+        key_str = str(key).replace(".", "_")
+        hdr_utils.write_hdr(img, join(output_dir, "tm_photographic_{}.hdr".format(key_str)))
 
     if isinstance(opt.gamma_compression, float):
         gamma = opt.gamma_compression
         img = GlobalToneMapping.gamma_compression(hdr.radiance_map, gamma=gamma)
-        hdr_utils.write_hdr(img, join(output_dir + "tm_gamma_{}.hdr".format(gamma)))
+
+        gamma_str = str(gamma).replace(".", "_")
+        hdr_utils.write_hdr(img, join(output_dir, "tm_gamma_{}.hdr".format(gamma_str)))
 
 
 if __name__ == '__main__':

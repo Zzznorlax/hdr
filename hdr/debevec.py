@@ -206,7 +206,7 @@ class DebevecMethod():
             plt.yticks([])
 
             plt.subplot(2, 2, 4)
-            plt.title(label_list[idx])
+            plt.title("All")
             plt.plot(data[:], marker_list[idx])
             plt.xticks([])
             plt.yticks([])
