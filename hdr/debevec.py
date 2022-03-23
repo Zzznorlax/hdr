@@ -3,42 +3,28 @@ import random
 import numpy as np
 import matplotlib.pyplot as plt
 
-from typing import List
-from PIL import Image
+from typing import List, Optional
 
+from . import loader
 from utils import log as log_utils
-from utils import file as file_utils
-from utils import exif as exif_utils
-from utils import image as img_utils
+from utils import hdr as hdr_utils
 
 
 class DebevecMethod():
 
-    def __init__(self, img_folder: str, n: int = 50, lc: float = 5):
+    def __init__(self, img_loader: loader.ImageLoader, n: Optional[int] = None, lc: float = 5):
 
         stdout_handler = log_utils.get_stream_handler()
         self.logger = log_utils.get_logger("debevec-logger", handlers=[stdout_handler])
 
         self.logger.info("Initializing Debevec Method")
-        self.logger.info("sample points: {}".format(n))
         self.logger.info("lambda: {}".format(lc))
 
-        self.EXTS = ['.jpg', '.png', '.jpeg', '.JPG']
         self.MAX_VAL = 255
         self.MIN_VAL = 0
         self.z_range_length = self.MAX_VAL - self.MIN_VAL + 1
 
         self.weighting_ufunc = np.vectorize(self.weighting)
-
-        # image count
-        self.P = 0
-
-        # sample pixel count
-        self.N = n
-
-        # image size
-        self.W = 0
-        self.H = 0
 
         self.L: float = lc
 
@@ -49,44 +35,30 @@ class DebevecMethod():
         # ndarray of g functions in r, g, b order
         self.G = np.zeros((self.ch_num, self.z_range_length))
 
+        # images as numpy array
+        self.imgs = img_loader.imgs
+
+        # image size
+        self.H = self.imgs[0].shape[0]
+        self.W = self.imgs[0].shape[1]
+
+        # number of pictures
+        self.P = len(self.imgs)
+        self.logger.info("picture number: {}".format(self.P))
+
+        # sample pixel count
+        if n is None:
+            n = (self.MAX_VAL - self.MIN_VAL) * 2 // self.P
+        self.N = n
+        self.logger.info("sample pixel number: {}".format(self.N))
+
         # radiance map
         self.radiance_map = np.zeros((self.ch_num, self.H, self.W), dtype=np.float32)
 
-        # images as numpy array
-        self.imgs: List[np.ndarray] = []
-
         # list of ln(Exposure time)
-        self.exposure_time: List[float] = []
-
-        self.load_folder(img_folder)
-
-        self.P = len(self.img_paths)
-
-        for file_path in self.img_paths:
-
-            img = self.load_image(file_path)
-
-            d_t = self.parse_exposure_time(img, file_utils.get_filename(file_path))
-
-            self.logger.info("{}: exposure time = {}".format(file_path, d_t))
-
-            self.exposure_time.append(math.log(d_t))
-
-            np_img = np.array(img)
-
-            # TODO Add size check
-            self.H = np_img.shape[0]
-            self.W = np_img.shape[1]
-
-            self.imgs.append(np_img)
+        self.exposure_time: List[float] = [math.log(d_t) for d_t in img_loader.exposure_time]
 
         self.logger.info("image size: {} x {}".format(self.W, self.H))
-        self.logger.info("picture number: {}".format(self.P))
-
-        # aligns images
-        scale = 5
-        self.logger.info("start MTB image alignment for {} images with scale set to {}".format(len(self.imgs), scale))
-        self.imgs = img_utils.mtb_alignment(np.array(self.imgs), scale=scale).tolist()
 
         # single channel image layers
         # shape: [channels, images num, height, width]
@@ -97,40 +69,9 @@ class DebevecMethod():
         self.samples = np.zeros((self.ch_num, self.N, self.P), dtype=np.uint8)
         self.sample()
 
-    def load_folder(self, path: str):
-
-        file_paths = file_utils.get_files(path)
-
-        for file_path in file_paths:
-            _, ext = file_utils.get_extension(file_path)
-
-            if ext not in self.EXTS:
-                continue
-
-            self.img_paths.append(file_path)
-
-    @staticmethod
-    def load_image(path: str) -> Image.Image:
-        return Image.open(path).convert('RGB')
-
-    @staticmethod
-    def parse_exposure_time(img: Image.Image, filename: str) -> float:
-
-        d_t: float = 0
-
-        try:
-            exif = exif_utils.parse_exif(img)
-            d_t = float(exif['ExposureTime'])
-
-        except KeyError:
-            filename, _ = file_utils.get_extension(filename)
-            filename = filename.replace('_', '/')
-            d_t = eval(filename)
-
-        return d_t
-
     def sample(self):
 
+        # uniformly samples from z in range 0 ~ 255
         step = math.ceil((self.MAX_VAL - self.MIN_VAL + 1) / self.N)
 
         for ch_idx in range(self.ch_num):
@@ -205,7 +146,7 @@ class DebevecMethod():
 
         self.logger.info("g solved")
 
-    def compute_radiance_map(self):
+    def compute_radiance_map(self, dest: Optional[str] = None):
         self.logger.info("start constructing radiance map")
 
         # with float32 opencv can then save radiance map as .hdr file
@@ -231,6 +172,10 @@ class DebevecMethod():
 
         self.logger.info("radiance map constructed")
 
+        if dest is not None:
+            hdr_utils.write_hdr(self.radiance_map, dest=dest)
+            self.logger.info("HDR image saved to {}".format(dest))
+
     def plot_ln_radiance_map(self, dest: str):
         label_list = ['R', 'G', 'B', 'Image']
         for idx in range(self.ch_num):
@@ -247,6 +192,8 @@ class DebevecMethod():
         plt.yticks([])
 
         plt.savefig(dest, dpi=512)
+
+        self.logger.info("radiance map written to {}".format(dest))
 
     def plot_g(self, dest: str):
         label_list = ['R', 'G', 'B']
@@ -265,3 +212,5 @@ class DebevecMethod():
             plt.yticks([])
 
         plt.savefig(dest)
+
+        self.logger.info("g plot written to {}".format(dest))

@@ -1,7 +1,5 @@
 # High Dynamic Range Imaging
 
-繳交格式：
-
 ### TODO
 - [ ] 繳交檔案 hw1_[teamID].zip e.g. hw1_[30].zip
 - [ ] data/
@@ -51,8 +49,20 @@ project_dir
 ### Assembling HDR Image
 Execute `main.py`.
 ```shell
-python3 main.py
+python3 main.py --data path/to/images
 ```
+
+| Arguments             |    Default    | Description                           |
+| :-------------------- | :-----------: | :------------------------------------ |
+| --data                | samples/data  | input images directory                |
+| --align               |       5       | align input images with given scale   |
+| --lambda              |      100      | smoothing coefficient                 |
+| --sample-num          | 512 / img_num | sample pixel number                   |
+| --plot-g              |     True      | plot g function                       |
+| --plot-radiance       |     True      | plot radiance map                     |
+| --global-photographic |     0.36      | global photographic tone mapping      |
+| --gamma-compression   |      1.6      | global gamma compression tone mapping |
+
 This will assemble a HDR image named `raw.hdr`, a plot of g functions in RGB channels `g_plots.png` and
 a radiance map `radiance_map.png` in the `outputs` directory.
 ```
@@ -66,6 +76,7 @@ project_dir
             ├── radiance_map.png
             └── g_plots.png
 ```
+
 
 ### Median Threshold Bitmap (MTB) Image Alignment
 Image alignment using median threshold bitmap (MTB) method.
